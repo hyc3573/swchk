@@ -1,3 +1,6 @@
 .dir-locals.el
 .projectile
 compile_commands.json
+build-mega-atmega2560
+.cache
+gun/build-nano-atmega328

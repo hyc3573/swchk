@@ -12,20 +12,21 @@
 #define MOVE_HALF_PERIOD 3000  // 3secs
 #define TRG_COOLDOWN 500
 
-#define TARGET_UP_SRV_VALUE 0
-#define TARGET_DOWN_SRV_VALUE 90
+#define NO_GUN
 
 unsigned long target_wakeup_timer[N_TARGETS] = {0,};
 const int target_pins[N_TARGETS] = {22, 23, 24, 25, 26, 27};
 const int wakeup_servo_pins[N_TARGETS] = {28, 29, 30, 31, 32, 33};
 Servo wakeup_servos[N_TARGETS];
 int wakeup_srv_position[N_TARGETS] = {0, 0, 0}; // 0 for standing, 1 for lying
+int wakeup_srv_up_value[N_TARGETS] = {70, 70, 0, 0, 0, 0};
+int wakeup_srv_down_value[N_TARGETS] = {0, 0, 70, 70, 70, 70};
 
 unsigned long peek_timer[N_PEEKERS] = {0, 0, 0};
 int peek_servo_pins[N_PEEKERS] = {34, 35, 36};
 Servo peek_servos[N_PEEKERS];
-int peek_srv_hide_value[N_PEEKERS] = {0, 90, 90};
-int peek_srv_show_value[N_PEEKERS] = {180, 0, 0};
+int peek_srv_hide_value[N_PEEKERS] = {0, 180, 180};
+int peek_srv_show_value[N_PEEKERS] = {90, 0, 0};
 int peek_srv_position[N_PEEKERS] = {0, 0, 0}; // 0 for hide, 1 for show
 
 unsigned long move_timer[N_MOVERS] = {};
@@ -48,7 +49,7 @@ void setup() {
     for (int i=0;i<N_TARGETS;i++) {
         pinMode(target_pins[i], INPUT);
         wakeup_servos[i].attach(wakeup_servo_pins[i]);
-        wakeup_servos[i].write(TARGET_UP_SRV_VALUE);
+        wakeup_servos[i].write(wakeup_srv_up_value[i]);
         wakeup_srv_position[i] = 0;
     }
     for (int i=0;i<N_PEEKERS;i++) {
@@ -105,7 +106,11 @@ void loop() {
 
         trigger_prev = trigger;
         trigger = !digitalRead(trigger_pin);
+        #ifdef NO_GUN
+        bool lazer_active = true;
+        #else
         bool lazer_active = trigger && !trigger_prev;
+        #endif
 
         if (lazer_active && t - trigger_cooldown_timer >= TRG_COOLDOWN) {
             digitalWrite(lazer_pin, HIGH);
@@ -121,12 +126,12 @@ void loop() {
             if (digitalRead(target_pins[i]) && !wakeup_srv_position[i] && lazer_active) {
                 wakeup_srv_position[i] = true;
                 target_wakeup_timer[i] = t;
-                wakeup_servos[i].write(TARGET_DOWN_SRV_VALUE);
+                wakeup_servos[i].write(wakeup_srv_down_value[i]);
                 score += 5;
             } else {
                 if (t - target_wakeup_timer[i] >= WAKEUP_DELAY && wakeup_srv_position[i]) {
                     wakeup_srv_position[i] = false;
-                    wakeup_servos[i].write(TARGET_UP_SRV_VALUE);
+                    wakeup_servos[i].write(wakeup_srv_up_value[i]);
                 }
             }
 
@@ -137,7 +142,7 @@ void loop() {
             for (int i=0;i<N_TARGETS;i++)
             {
                 wakeup_srv_position[i] = false;
-                wakeup_servos[i].write(TARGET_UP_SRV_VALUE);
+                wakeup_servos[i].write(wakeup_srv_up_value[i]);
                 score += 2;
             }
         }
