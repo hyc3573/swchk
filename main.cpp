@@ -119,7 +119,7 @@ void loop() {
             digitalWrite(lazer_pin, LOW);
         }
         
-        delay(500);
+        delay(50);
 
         bool alldown = true;
         for (int i=0;i<N_TARGETS;i++) {
